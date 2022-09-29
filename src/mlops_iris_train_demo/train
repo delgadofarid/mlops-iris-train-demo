@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+
+import argparse
+import logging
+
+from mlops_iris_train_demo.iris_train.trainer import IrisTrain
+
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+)
+_logger = logging.getLogger(__name__)
+
+
+if __name__ == '__main__':
+    _logger.info("Iris Model training started...")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max_leaf_nodes", type=int, default=3)
+    parser.add_argument("--train_data_dir", type=str, default="/opt/ml/input/data/training")
+    parser.add_argument("--model_dir", type=str, default="/opt/ml/model")
+    parser.add_argument("--output_dir", type=str, default="/opt/ml/output")
+    args = parser.parse_args()
+    args = vars(args)
+
+    train = IrisTrain(args)
+    model = train.run()
+    _logger.info("Iris Model training completed!")
+    _logger.info("Iris model: %s", model)
