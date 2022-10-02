@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-from mlops_iris_train_demo.iris_train import model
+from iris_train import model
 
 # This directory is the communication channel between Sagemaker and your container
 from typing import Dict, Any

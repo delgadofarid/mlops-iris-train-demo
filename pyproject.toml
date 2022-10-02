@@ -5,7 +5,7 @@ description = "Repo containing training code for an Iris classifier"
 authors = ["Farid Delgado <delgado.farid@gmail.com>"]
 license = "Apache-2.0 license"
 packages = [
-    { include = "mlops_iris_train_demo", from = "src" }
+    { include = "iris_train", from = "src" }
 ]
 
 [tool.poetry.dependencies]
