@@ -225,7 +225,7 @@ Resources:
                         },
                         "ResourceConfig": {
                             "InstanceCount": 1,
-                            "InstanceType": "ml.m5.large",
+                            "InstanceType": "ml.m5.xlarge",
                             "VolumeSizeInGB": 10
                         },
                         "InputDataConfig": [
