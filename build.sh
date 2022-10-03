@@ -30,6 +30,8 @@ else
   echo "codebuild git hash: $hash"
 fi
 
+export CommitHash=$hash
+
 # ECR login for the current account in order to publish our image
 aws ecr get-login-password --region ${region} \
 | docker login --username AWS --password-stdin ${account}.dkr.ecr.${region}.amazonaws.com

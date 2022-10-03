@@ -1,0 +1,280 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "A MLOPS lab"
+
+Parameters:
+  # *** This value must always be passed in when creating / updating stack
+  # "NoEcho" is set to true, for security, so token won't be visible when examining the resulting stack
+  GitHubOAuthToken:
+    Type: String
+    NoEcho: true
+    MinLength: 40
+    MaxLength: 40
+    AllowedPattern: '[A-Za-z0-9_]*'
+
+  # *** The remaining parameters should either be:
+  # - overridden via changing "Default" here (PREFERABLE, since then they're in source control)
+  # - or you can pass them in when creating / updating the stack
+
+  # *** The owner of the Github repo for this application.
+  GitHubOwner:
+    Type: String
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+  GitHubRepo:
+    Type: String
+    Default: mlops-iris-train-demo
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+  GitHubBranch:
+    Type: String
+    Default: main
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+  ECRRepositoryName:
+    Type: String
+    Default: iris-train
+    AllowedPattern: "(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*"
+
+Resources:
+  deployModelPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
+  buildImageProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
+  stepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: states.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
+  sageMakerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: sagemaker.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
+
+  buildImageProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: Build a Model Image
+      ServiceRole: !GetAtt buildImageProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        PrivilegedMode: True
+        EnvironmentVariables:
+          - Name: IMAGE_REPO_NAME
+            Value: !Ref ecrModelRepo
+          - Name: AWS_DEFAULT_REGION
+            Value: !Sub ${AWS::Region}
+
+  # 'githubWebhook' satisfies two requirements:
+  # -- Means that updates are pushed from GitHub, rather than AWS having to poll
+  # -- Means we can filter for required changes
+  githubWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubOAuthToken
+      RegisterWithThirdParty: 'true'
+      Filters:
+        - JsonPath: "$.ref"
+          MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref deployModelPipeline
+      TargetAction: Source
+      TargetPipelineVersion: !GetAtt deployModelPipeline.Version
+
+  deployModelPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt deployModelPipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref modelArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+          - Name: Source
+            InputArtifacts: [ ]
+            ActionTypeId:
+              Category: Source
+              Owner: ThirdParty
+              Version: 1
+              Provider: GitHub
+            OutputArtifacts:
+              - Name: ModelSourceOutput
+            Configuration:
+              Owner: !Ref GitHubOwner
+              Repo: !Ref GitHubRepo
+              Branch: !Ref GitHubBranch
+              PollForSourceChanges: false
+              OAuthToken: !Ref GitHubOAuthToken
+            RunOrder: 1
+        - Name: Build
+          Actions:
+          - Name: BuildImage
+            InputArtifacts:
+              - Name: ModelSourceOutput
+            ActionTypeId:
+              Category: Build
+              Owner: AWS
+              Version: 1
+              Provider: CodeBuild
+            OutputArtifacts:
+              - Name: ModelBuildOutput
+            Configuration:
+              ProjectName: !Ref buildImageProject
+            Namespace: BuildVariables
+            RunOrder: 1
+        - Name: Train
+          Actions:
+          - Name: Train
+            InputArtifacts:
+              - Name: ModelSourceOutput
+            ActionTypeId:
+              Category: Invoke
+              Owner: AWS
+              Version: 1
+              Provider: StepFunctions
+            Configuration:
+              Input: !Join
+                - ''
+                - - '{"jobName":"Job-#{codepipeline.PipelineExecutionId}",'
+                  - '"modelName":"Model-#{codepipeline.PipelineExecutionId}",'
+                  - !Sub '"trainImageArn":"${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ecrModelRepo}:#{BuildVariables.CommitHash}",'
+                  - !Sub '"dataBucketPath":"s3://${modelDataBucket}/v1.0/train",'
+                  - '"trainImageVersion":"#{BuildVariables.CommitHash}",'
+                  - '"triggerSource":"pipeline"}'
+              StateMachineArn: !Ref trainingStateMachine
+            OutputArtifacts:
+              - Name: trainingJobArtifact
+            RunOrder: 1
+
+  ecrModelRepo:
+    Type: AWS::ECR::Repository
+    "Properties" : {
+      "RepositoryName": !Ref ECRRepositoryName
+    }
+
+  modelDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+
+  modelArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+
+  trainingStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      RoleArn: !GetAtt stepFunctionsRole.Arn
+      DefinitionString:
+        !Sub |
+        {
+            "StartAt": "Train Step",
+            "States": {
+                "Train Step": {
+                    "Resource": "arn:aws:states:::sagemaker:createTrainingJob.sync",
+                    "Parameters": {
+                        "RoleArn": "${sageMakerRole.Arn}",
+                        "TrainingJobName.$": "$$.Execution.Input['jobName']",
+                        "AlgorithmSpecification": {
+                            "TrainingImage.$": "$$.Execution.Input['trainImageArn']",
+                            "TrainingInputMode": "File"
+                        },
+                        "ResourceConfig": {
+                            "InstanceCount": 1,
+                            "InstanceType": "ml.m5.large",
+                            "VolumeSizeInGB": 10
+                        },
+                        "InputDataConfig": [
+                            {
+                                "ChannelName": "training",
+                                "DataSource": {
+                                    "S3DataSource": {
+                                        "S3DataType": "S3Prefix",
+                                        "S3Uri.$": "$$.Execution.Input['dataBucketPath']",
+                                        "S3DataDistributionType": "FullyReplicated"
+                                    }
+                                },
+                                "ContentType": "csv",
+                                "CompressionType": "None"
+                            }
+                        ],
+                        "StoppingCondition": {
+                            "MaxRuntimeInSeconds": 3600
+                        },
+                        "OutputDataConfig": {
+                            "S3OutputPath": "s3://${modelArtifactBucket}/jobs/$$.Execution.Input['jobName']"
+                        }
+                    },
+                    "Type": "Task",
+                    "Next": "Save model"
+                },
+                "Save model": {
+                    "Parameters": {
+                        "ExecutionRoleArn": "${sageMakerRole.Arn}",
+                        "ModelName.$": "$$.Execution.Input['modelName']",
+                        "PrimaryContainer": {
+                            "Environment": {},
+                            "Image.$": "$$.Execution.Input['trainImageArn']",
+                            "ModelDataUrl.$": "$['ModelArtifacts']['S3ModelArtifacts']"
+                        },
+                        "Tags": [
+                            {
+                                "Key": "TrainImageVersion",
+                                "Value.$": "$$.Execution.Input['trainImageVersion']"
+                            },
+                            {
+                                "Key": "TriggerSource",
+                                "Value.$": "$$.Execution.Input['triggerSource']"
+                            }
+                        ]
+                    },
+                    "Resource": "arn:aws:states:::sagemaker:createModel",
+                    "Type": "Task",
+                    "End": true
+                }
+            }
+        }

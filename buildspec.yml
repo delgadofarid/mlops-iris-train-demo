@@ -1,0 +1,16 @@
+version: 0.2
+
+env:
+  exported-variables:
+    - CommitHash
+phases:
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Python version `python --version`
+      - echo AWS-CLI version `aws --version`
+      - echo Path `pwd`
+      - echo Permissions `ls -la`
+      # $IMAGE_NAME and $AWS_DEFAULT_REGION are defined as environmental variables for the build project
+      - ./build.sh $IMAGE_REPO_NAME $AWS_DEFAULT_REGION
+      - echo Build completed on `date`
