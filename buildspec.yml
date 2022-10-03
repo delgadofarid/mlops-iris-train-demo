@@ -4,6 +4,9 @@ env:
   exported-variables:
     - CommitHash
 phases:
+  pre_build:
+    commands:
+      - chmod +x ./build.sh
   build:
     commands:
       - echo Build started on `date`
