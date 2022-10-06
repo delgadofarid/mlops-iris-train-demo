@@ -1,4 +1,4 @@
-# mlops-iris-train-demo
+# A MLOps Workflow - Iris Classifier
 Repo containing training code for an Iris classifier. This repo supports running the training code as an 
 [AWS Sagemaker training job](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingJob.html).
 
