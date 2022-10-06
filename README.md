@@ -87,7 +87,7 @@ This step is needed for you to be able to interact with the repo using a token w
 
 ## 4. Create CloudFormation stack
 
-We will use the CloudFormation template [cf-template.yml](cf/cf-template.yml) to provision the AWS
+We will use the CloudFormation template [cf-template.yml](workflow/cf-template.yml) to provision the AWS
 infrastructure for our MLOps Workflow.
 
 Remember to delete de stack once you finish the lab to avoid getting charged unnecessary costs.
@@ -96,10 +96,10 @@ Remember to delete de stack once you finish the lab to avoid getting charged unn
 the required resources, therefore, depending on all the required resources, this role would have to
 be adjusted correspondingly. For more info about IAM roles see: [Creating IAM roles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create.html).
 
-2. Once the CF role is created, we can proceed uploading the template [cf-template.yml](cf/cf-template.yml) as
+2. Once the CF role is created, we can proceed uploading the template [cf-template.yml](workflow/cf-template.yml) as
 explained here: [Using the console to create a CF stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html)
 
-   1. Select the option "Upload a tempalte file and find [cf-template.yml](cf/cf-template.yml), click "Next"
+   1. Select the option "Upload a tempalte file and find [cf-template.yml](workflow/cf-template.yml), click "Next"
    2. Specify the CF stack name (e.g. a-mlops-workflow) and parameters:
       1. ECRRepositoryName: name of the ECR repository that will be created
       2. GitHubBranch: which GitHub branch to use for setting up the webhook
