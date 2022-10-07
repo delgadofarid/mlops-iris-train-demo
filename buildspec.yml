@@ -1,8 +1,5 @@
 version: 0.2
 
-env:
-  exported-variables:
-    - CommitHash
 phases:
   pre_build:
     commands:

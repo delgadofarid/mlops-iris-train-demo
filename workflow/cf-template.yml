@@ -148,6 +148,7 @@ Resources:
               Branch: !Ref GitHubBranch
               PollForSourceChanges: false
               OAuthToken: !Ref GitHubOAuthToken
+            Namespace: BuildVariables
             RunOrder: 1
         - Name: Build
           Actions:
@@ -163,7 +164,7 @@ Resources:
               - Name: ModelBuildOutput
             Configuration:
               ProjectName: !Ref buildImageProject
-            Namespace: BuildVariables
+            Namespace: SourceVariables
             RunOrder: 1
         - Name: Train
           Actions:
@@ -180,9 +181,9 @@ Resources:
                 - ''
                 - - '{"jobName":"Job-#{codepipeline.PipelineExecutionId}",'
                   - '"modelName":"Model-#{codepipeline.PipelineExecutionId}",'
-                  - !Sub '"trainImageArn":"${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ecrModelRepo}:#{BuildVariables.CommitHash}",'
+                  - !Sub '"trainImageArn":"${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ecrModelRepo}:#{SourceVariables.CommitHash}",'
                   - !Sub '"dataBucketPath":"s3://${modelDataBucket}/v1.0/train",'
-                  - '"trainImageVersion":"#{BuildVariables.CommitHash}",'
+                  - '"trainImageVersion":"#{SourceVariables.CommitHash}",'
                   - !Sub '"modelBucketPath":"s3://${modelArtifactBucket}/jobs/Job-#{codepipeline.PipelineExecutionId}",'
                   - '"triggerSource":"pipeline"}'
               StateMachineArn: !Ref trainingStateMachine
