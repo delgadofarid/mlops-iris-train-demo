@@ -31,6 +31,7 @@ else
 fi
 
 export CommitHash=$hash
+CommitHash=$hash
 
 # ECR login for the current account in order to publish our image
 aws ecr get-login-password --region ${region} \
