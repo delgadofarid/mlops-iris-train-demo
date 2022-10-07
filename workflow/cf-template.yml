@@ -148,7 +148,7 @@ Resources:
               Branch: !Ref GitHubBranch
               PollForSourceChanges: false
               OAuthToken: !Ref GitHubOAuthToken
-            Namespace: BuildVariables
+            Namespace: SourceVariables
             RunOrder: 1
         - Name: Build
           Actions:
@@ -164,7 +164,7 @@ Resources:
               - Name: ModelBuildOutput
             Configuration:
               ProjectName: !Ref buildImageProject
-            Namespace: SourceVariables
+            Namespace: BuildVariables
             RunOrder: 1
         - Name: Train
           Actions:
