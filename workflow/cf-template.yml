@@ -183,6 +183,7 @@ Resources:
                   - !Sub '"trainImageArn":"${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ecrModelRepo}:#{BuildVariables.CommitHash}",'
                   - !Sub '"dataBucketPath":"s3://${modelDataBucket}/v1.0/train",'
                   - '"trainImageVersion":"#{BuildVariables.CommitHash}",'
+                  - !Sub '"modelBucketPath":"s3://${modelArtifactBucket}/jobs/Job-#{codepipeline.PipelineExecutionId}",'
                   - '"triggerSource":"pipeline"}'
               StateMachineArn: !Ref trainingStateMachine
             OutputArtifacts:
@@ -246,7 +247,7 @@ Resources:
                             "MaxRuntimeInSeconds": 3600
                         },
                         "OutputDataConfig": {
-                            "S3OutputPath": "s3://${modelArtifactBucket}/jobs/$$.Execution.Input['jobName']"
+                            "S3OutputPath.$": "$$.Execution.Input['modelBucketPath']"
                         }
                     },
                     "Type": "Task",
