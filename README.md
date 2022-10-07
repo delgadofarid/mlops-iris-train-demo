@@ -1,11 +1,11 @@
 # A MLOps Workflow - Iris Classifier
-Repo containing training code for an Iris classifier that support running as training code as an 
+Repo containing training code for an Iris classifier with support to run as an 
 [AWS Sagemaker training job](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingJob.html). 
-In other words, provides a compatible [SageMaker training entrypoint script](src/train) + a [Dockerfile](Dockerfile)
-compatible with SageMaker.
+In other words, it provides a [SageMaker training entrypoint script](src/train), as well as a
+[SageMaker compatible Dockerfile](Dockerfile).
 
-Additionally, it contains a [CloudFormation template](workflow/cf-template.yml) provisioning a CICD triggering a 
-simple (Steps Function) MLOps workflow in AWS that train and register a model.
+Additionally, it contains a [CloudFormation template](workflow/cf-template.yml) provisioning 
+a CICD pipeline triggering a simple (Steps Function) MLOps workflow in AWS that train and register a model.
 
 ## Requirements
 
@@ -58,7 +58,7 @@ It's your responsibility to shut them down when unused to avoid extra/unexpected
    
     note: if not values are specified, default values will be assigned
 
-## 2. Docker image build
+## 2. (optional) Docker image build and test
 
 To be able to run a training job with a custom algorithm in AWS, you have to
 provide a docker image containing your custom training logic. Let's create this
@@ -84,6 +84,11 @@ command:
      -v </path/to/output/data/dir/>:/opt/ml/output \
      iris-train train
    ```
+
+If you're curious, we've provided in the [Appendix](#appendix) section, some 
+[instructions](#push-docker-image-manually-to-aws) on how to manually push a 
+docker image to AWS ECR, which is automated as part of the CICD provisioned \
+by CloudFormation in the steps below.
 
 ## 3. Fork or replicate this repo on your GitHub account
 
@@ -176,12 +181,13 @@ This step is for the curious, not needed since this was automated using CodePipe
    Note: Ensure these files are only accessible by yourself as they contain 
    your AWS credentials.
 
-4. Build and push the docker image using the [build.sh](build.sh) script:
-
+3. Build and push the docker image using the [build.sh](build.sh) script:
    ```shell
    # replace <aws-region> with the AWS region where you're creating your AWS resources
    $ ./build.sh iris-train <aws-region> 
    ```
+    Verify that the new image was created and tagged in your ECR repo
+4. As a final step, make sure to clean up any resources created to avoid extra costs
 
 ## TODO:
 - CloudFormation template:
