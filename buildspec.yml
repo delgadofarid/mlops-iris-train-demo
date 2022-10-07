@@ -1,5 +1,8 @@
 version: 0.2
 
+env:
+  exported-variables:
+    - CommitHash
 phases:
   pre_build:
     commands:
@@ -14,3 +17,4 @@ phases:
       # $IMAGE_NAME and $AWS_DEFAULT_REGION are defined as environmental variables for the build project
       - ./build.sh $IMAGE_REPO_NAME $AWS_DEFAULT_REGION
       - echo Build completed on `date`
+      - echo $CommitHash
