@@ -88,9 +88,18 @@ This step is needed for you to be able to interact with the repo using a token w
 ## 4. Create CloudFormation stack
 
 We will use the CloudFormation template [cf-template.yml](workflow/cf-template.yml) to provision the AWS
-infrastructure for our MLOps Workflow.
+infrastructure for our MLOps Workflow. The workflow will contain 2 steps (train and save model):
 
-Remember to delete de stack once you finish the lab to avoid getting charged unnecessary costs.
+![MLOps Step Function Workflow](.img/mlops_sf_workflow.png)
+
+- Train Step: pulls data from S3, triggers a (SageMaker) training job using our custom docker image (available in ECR),
+  and writes any model artifact associated to S3
+- Save model: registers our trained model in our (SageMaker) model registry
+
+__note__: Remember to delete de stack after finishing the lab to avoid to remove any associated 
+infrastructure, to avoid getting charged unnecessary costs.
+
+Okay, let's create it!
 
 1. Create an IAM role for CloudFormation (CF). This is the role used by CF to provision all
 the required resources, therefore, depending on all the required resources, this role would have to
