@@ -1,6 +1,7 @@
 version: 0.2
 
 env:
+  shell: bash
   exported-variables:
     - COMMIT_HASH
 phases:
