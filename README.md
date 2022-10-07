@@ -50,7 +50,7 @@ It's your responsibility to shut them down when unused to avoid extra/unexpected
 4. Run the training job:
     ```shell
     # values between < and > should be replaced
-    $ poetry run python src/mlops_iris_train_demo/train \
+    $ poetry run python src/train \
         --train_data_dir="</path/to/training/data/dir/>" \ 
         --model_dir="</path/to/model/data/dir/>" \
         --output_dir="</path/to/output/data/dir/>"
