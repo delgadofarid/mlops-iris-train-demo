@@ -17,6 +17,6 @@ phases:
       - echo Permissions `ls -la`
       # $IMAGE_NAME and $AWS_DEFAULT_REGION are defined as environmental variables for the build project
       - ./build.sh $IMAGE_REPO_NAME $AWS_DEFAULT_REGION
-      - "export COMMIT_HASH=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}"
+      - export COMMIT_HASH=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}
       - echo COMMIT_HASH
       - echo Build completed on `date`
