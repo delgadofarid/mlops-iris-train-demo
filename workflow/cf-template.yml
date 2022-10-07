@@ -181,9 +181,9 @@ Resources:
                 - ''
                 - - '{"jobName":"Job-#{codepipeline.PipelineExecutionId}",'
                   - '"modelName":"Model-#{codepipeline.PipelineExecutionId}",'
-                  - !Sub '"trainImageArn":"${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ecrModelRepo}:#{SourceVariables.CommitHash}",'
+                  - !Sub '"trainImageArn":"${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ecrModelRepo}:#{BuildVariables.COMMIT_HASH}",'
                   - !Sub '"dataBucketPath":"s3://${modelDataBucket}/v1.0/train",'
-                  - '"trainImageVersion":"#{SourceVariables.CommitHash}",'
+                  - '"trainImageVersion":"#{BuildVariables.COMMIT_HASH}",'
                   - !Sub '"modelBucketPath":"s3://${modelArtifactBucket}/jobs/Job-#{codepipeline.PipelineExecutionId}",'
                   - '"triggerSource":"pipeline"}'
               StateMachineArn: !Ref trainingStateMachine
