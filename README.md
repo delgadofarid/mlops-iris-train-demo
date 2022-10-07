@@ -1,6 +1,11 @@
 # A MLOps Workflow - Iris Classifier
-Repo containing training code for an Iris classifier. This repo supports running the training code as an 
-[AWS Sagemaker training job](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingJob.html).
+Repo containing training code for an Iris classifier that support running as training code as an 
+[AWS Sagemaker training job](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingJob.html). 
+In other words, provides a compatible [SageMaker training entrypoint script](src/train) + a [Dockerfile](Dockerfile)
+compatible with SageMaker.
+
+Additionally, it contains a [CloudFormation template](workflow/cf-template.yml) provisioning a CICD triggering a 
+simple (Steps Function) MLOps workflow in AWS that train and register a model.
 
 ## Requirements
 
@@ -140,8 +145,15 @@ dangling around.
 
 ## 6. Trigger a model training
 
-1. To trigger model training, we just need to make a change to the repository, commit and push these changes to the
-branch specified above (i.e. `GitHubBranch`)
+To trigger model training, we just need to make a change to the repository, commit and push these changes to the
+branch specified above (i.e. `GitHubBranch`). After a successful training job, you should see new model files
+created in S3, as well as your model registered in SageMaker model registry.
+
+__Troubleshooting__: if something goes wrong with your execution:
+1. check in the CodePipeline history to find a possible cause for the error
+2. if the error happened during the execution of the Step Function workflow, 
+spot check the `Exception` tab displayed within the failing step
+
 
 ## Appendix
 
