@@ -26,7 +26,7 @@ if [[ -z "${CODEBUILD_RESOLVED_SOURCE_VERSION}" ]]; then
   echo "git hash: $hash"
 else
   echo "Using codebuild hash"
-  hash=$(head -c 7 <<< "$CODEBUILD_RESOLVED_SOURCE_VERSION")
+  hash=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}
   echo "codebuild git hash: $hash"
 fi
 
